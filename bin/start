@@ -60,6 +60,12 @@ else
   MODE=continue
 fi
 
+if [ "X$MODE" = "Xfresh" -o "X$MODE" = "Xclean" -o "X$MODE" = "continue" ]; then
+  custom_mode=false
+else
+  custom_mode=true
+fi
+
 export HAVEX11=false
 
 if xset q > /dev/null 2>&1; then
@@ -275,6 +281,7 @@ fi
 ##############################################################################
 # Test Gerrit setup
 ##############################################################################
+verify_gerrit_setup() {
 logstep "Verify Gerrit User/SSH Key"
 logmsg "Gerrit Username: [$gerrit_username]"
 
@@ -305,11 +312,16 @@ else
   fi
   exit
 fi
+}
 
+if [ "X$MODE" = "Xverify_gerrit_setup" -o "X$custom_mode" = "Xfalse" ]; then
+  verify_gerrit_setup
+fi
 ##############################################################################
 # Clone repos and checkout a local branch of Core3 origin/unstable
 # TODO Edit working directory name as needed.
 ##############################################################################
+git_repos() {
 logstep "Git repos"
 mkdir -p ~/workspace > /dev/null 2>&1
 
@@ -336,10 +348,18 @@ do
     fi
   fi
 done
+}
+
+if [ "X$MODE" = "Xgit_repos" -o "X$custom_mode" = "Xfalse" ]; then
+  git_repos
+fi
 
 ##############################################################################
 # Make easy links so it's more compatible with the old setup
 ##############################################################################
+
+symlinks() {
+
 logstep "Symlinks"
 
 cd ~/workspace
@@ -353,10 +373,16 @@ do
      sudo cp /home/swgemu/workspace/MMOEngine/bin/idlc /usr/local/bin
      sudo chmod 755 /usr/local/bin/idlc
 done
+}
+
+if [ "X$MODE" = "Xsymlinks" -o "X$custom_mode" = "Xfalse" ]; then
+  symlinks
+fi
 
 ##############################################################################
 # Figure out what Engine library to link to
 ##############################################################################
+engine_library() {
 logstep "Engine Library"
 englib=PublicEngine/MMOEngine/lib/unix/libengine3.a
 if [ ! -L $englib ]; then
@@ -376,12 +402,16 @@ if [ ! -L $englib ]; then
 fi
 
 logmsg "Using engine library: $(readlink $englib)"
+}
 
+if [ "X$MODE" = "Xengine_library" -o "X$custom_mode" = "Xfalse" ]; then
+  engine_library
+fi
 
 ##############################################################################
 logstep "MySQL database"
 ##############################################################################
-
+mysql_initialize() {
 if  [[ ! "$(/usr/sbin/service mysql status)" =~ "start/running" ]]
 then 
     sudo service mysql start
@@ -401,11 +431,17 @@ else
     mysql -p123456 swgemu -e source -e $sql
   done
 fi
+}
+
+if [ "X$MODE" = "Xmysql_initialize" -o "X$custom_mode" = "Xfalse" ]; then
+  mysql_initialize
+fi
 
 ##############################################################################
 # Ask them to configure their server options
 # TODO Edit tre path as needed
 ##############################################################################
+server_configuration() {
 logstep "Server configuration"
 rundir=~/run
 runcfg=${rundir}/conf/config.lua
@@ -432,10 +468,17 @@ else
     done
   fi
 fi
+}
+
+if [ "X$MODE" = "Xserver_configuration" -o "X$custom_mode" = "Xfalse" ]; then
+  server_configuration
+fi
 
 ##############################################################################
 # Check for *.tre files
 ##############################################################################
+
+tre_files() {
 logstep "TRE files"
 trepath=$(cd $rundir;echo 'print(TrePath)' | lua -l conf/config)
 
@@ -468,11 +511,17 @@ else
     echo "ERROR: It appears you still do not have the *.tre files in ${trepath}"
   fi
 fi
+}
+
+if [ "X$MODE" = "Xtre_files" -o "X$custom_mode" = "Xfalse" ]; then
+  tre_files
+fi
 
 ##############################################################################
 # Give next steps
 # TODO ADD MORE INFO
 ##############################################################################
+if [ "X$custom_mode" = "Xfalse" ]; then
 logstep "Go for it"
 logmsg
 logmsg "Now you should be able to build the server with:"
@@ -506,6 +555,9 @@ fi
 
 if [ -n "$GETSTARTED_AUTO" ]; then
     read -p "Press <ENTER> to close window: " junk
+fi
+else
+logmsg "Done ${MODE}"
 fi
 
 exit 0
