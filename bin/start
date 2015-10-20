@@ -136,10 +136,10 @@ fi
 ##############################################################################
 # Choose editor
 ##############################################################################
-logstep "Editor"
 export VISUAL=$(cat ~/.visual 2> /dev/null)
 
 while [ ! -n "$VISUAL" ]
+logstep "Editor"
 do
   read -p "Would you prefer vim, nano, or gedit to edit files from the command line? vim" ed
   case $ed in
@@ -150,17 +150,17 @@ do
   esac
 
   export VISUAL=$(cat ~/.visual 2> /dev/null)
+  logmsg "Editor set to: $VISUAL"
 done
 
-logmsg "Editor set to: $VISUAL"
 
 ##############################################################################
 # Setup git user.* config
 ##############################################################################
-logstep "Git config"
 email_address=$(git config --get user.email)
 
 if [ ! -n "$email_address" ]; then
+  logstep "Git config"
   rm -f ~/.gitconfig
 fi
 
@@ -205,20 +205,19 @@ if [ ! -f ~/.gitconfig ]; then
       logmsg "let's try again **"
     fi
   done
+  git config --list | while read f
+  do
+    logmsg "git $f"
+  done
 fi
-
-git config --list | while read f
-do
-  logmsg "git $f"
-done
 
 email_address=$(git config --get user.email)
 
 ##############################################################################
 # Setup ssh key
 ##############################################################################
-logstep "SSH Key"
 if [ ! -d ~/.ssh -o ! -f ~/.ssh/id_rsa ]; then
+  logstep "SSH Key"
   logmsg "Ok looks like you need ssh keys, let's make some for you!"
   mkdir -p ~/.ssh > /dev/null 2>&1
   ssh-keygen -t rsa -q -N "" -C "emudev-"$(date +%Y%m%d)"-${email_address}" -f ~/.ssh/id_rsa
@@ -233,12 +232,13 @@ fi
 ##############################################################################
 # Ask them to register on gerrit
 ##############################################################################
-logstep "Gerrit registration"
+gerrit_registration() {
 gerrit_username=$(cat ~/.gerrit_username 2> /dev/null)
 
 # TODO Graphical we could pop-up the web browser !!
 
 if [ ! -n "$gerrit_username" ]; then
+  logstep "Gerrit registration"
   echo
   echo "Login to http://${gerrit_host}:${gerrit_webport}/ and register an account using an openID provider"
   echo
@@ -276,6 +276,11 @@ if [ ! -n "$gerrit_username" ]; then
       gerrit_username=$(cat ~/.gerrit_username 2> /dev/null)
     fi
   done
+fi
+}
+
+if [ "X$MODE" = "Xgerrit_registration" -o "X$custom_mode" = "Xfalse" ]; then
+  gerrit_registration
 fi
 
 ##############################################################################
@@ -409,9 +414,9 @@ if [ "X$MODE" = "Xengine_library" -o "X$custom_mode" = "Xfalse" ]; then
 fi
 
 ##############################################################################
-logstep "MySQL database"
 ##############################################################################
 mysql_initialize() {
+logstep "MySQL database"
 if  [[ ! "$(/usr/sbin/service mysql status)" =~ "start/running" ]]
 then 
     sudo service mysql start
