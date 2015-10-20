@@ -138,8 +138,11 @@ fi
 ##############################################################################
 export VISUAL=$(cat ~/.visual 2> /dev/null)
 
+if [ -z "$VISUAL" ]; then
+  logstep "Editor"
+fi
+
 while [ ! -n "$VISUAL" ]
-logstep "Editor"
 do
   read -p "Would you prefer vim, nano, or gedit to edit files from the command line? vim" ed
   case $ed in
